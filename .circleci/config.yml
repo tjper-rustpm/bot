@@ -1,0 +1,45 @@
+# This config is equivalent to both the '.circleci/extended/orb-free.yml' and the base '.circleci/config.yml'
+version: 2.1
+
+# Orbs are reusable packages of CircleCI configuration that you may share across projects, enabling you to create encapsulated, parameterized commands, jobs, and executors that can be used across multiple projects.
+# See: https://circleci.com/docs/2.0/orb-intro/
+orbs:
+  node: circleci/node@5.0.2
+  aws-ecr: circleci/aws-ecr@7.2.0
+
+jobs:
+  lint:
+    executor: node/default
+    steps:
+      - checkout
+      - node/install-packages:
+          cache-path: ~/project/node_modules
+          override-ci-command: npm install
+      - run: npm run lint
+
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  lint-test:
+    jobs:
+      - lint
+      - node/test:
+          version: '16.10'
+          pkg-manager: npm
+      - aws-ecr/build-and-push-image:
+          requires:
+            - lint
+            - node/test
+          context: aws
+          account-url: AWS_ECR_ACCOUNT_URL
+          aws-access-key-id: AWS_ECR_ACCESS_KEY_ID
+          aws-secret-access-key: AWS_ECR_SECRET_ACCESS_KEY
+          create-repo: false
+          dockerfile: deploy/Dockerfile.prod
+          no-output-timeout: 20m
+          path: .
+          region: AWS_REGION
+          repo: rustpm/bot
+          skip-when-tags-exist: false
+          tag: $CIRCLE_SHA1,latest
