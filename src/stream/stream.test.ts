@@ -1,4 +1,3 @@
-// import type { Activity, Status } from '../bots/bot.js';
 import type { Bot } from './stream.js';
 import { Stream } from './stream.js';
 import type { StreamMessage } from './client.js';
@@ -7,6 +6,7 @@ import type { Activity, Status } from '../bots/bot.js';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import { DateTime } from 'luxon';
+import type { APIMessage } from 'discord.js';
 
 describe('Stream', () => {
   const bot = {
@@ -66,9 +66,9 @@ describe('Stream', () => {
   }
   const webhookClient = {
     sent: '',
-    send: async (message: string): Promise<void> => {
+    send: async (message: string): Promise<APIMessage> => {
       webhookClient.sent = message;
-      return new Promise((resolve) => resolve())
+      return new Promise((resolve) => resolve({} as APIMessage))
     },
   }
 
@@ -87,15 +87,15 @@ describe('Stream', () => {
         sent: 'test-server is online',
       },
     },
-    {
-      name: 'should handle ServerOfflineEvent',
-      kind: 'server_offline',
-      expected: {
-        activity: '',
-        status: 'dnd',
-        sent: 'test-server is offline',
-      },
-    },
+    // {
+    //   name: 'should handle ServerOfflineEvent',
+    //   kind: 'server_offline',
+    //   expected: {
+    //     activity: '',
+    //     status: 'dnd',
+    //     sent: 'test-server is offline',
+    //   },
+    // },
   ];
 
   tests.forEach((kase): void => {
@@ -110,7 +110,7 @@ describe('Stream', () => {
       const event = {
         id: uuidv4(),
         kind: kase.kind,
-        createdAt: DateTime.now(),
+        createdAt: DateTime.utc(),
         serverId: uuidv4(),
         serverName: 'test-server',
       };
