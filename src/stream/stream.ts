@@ -45,12 +45,10 @@ export class Stream {
       const message = await this.streamClient.claimRead(minute)
 
       const event = this.parseEvent(message);
-      console.log(`event parsed: ${JSON.stringify(event)}`);
       if (event) {
         // If an event may be parsed from the message, proceed to handle it.
         // Otherwise, acknowledge the malformed message and proceed.
         await this.handle(event);
-        console.log(`event handled: ${JSON.stringify(event)}`);
       }
 
       await this.streamClient.ack(message);

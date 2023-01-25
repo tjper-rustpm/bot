@@ -87,15 +87,15 @@ describe('Stream', () => {
         sent: 'test-server is online',
       },
     },
-    // {
-    //   name: 'should handle ServerOfflineEvent',
-    //   kind: 'server_offline',
-    //   expected: {
-    //     activity: '',
-    //     status: 'dnd',
-    //     sent: 'test-server is offline',
-    //   },
-    // },
+    {
+      name: 'should handle ServerOfflineEvent',
+      kind: 'server_offline',
+      expected: {
+        activity: '',
+        status: 'dnd',
+        sent: 'test-server is offline',
+      },
+    },
   ];
 
   tests.forEach((kase): void => {
