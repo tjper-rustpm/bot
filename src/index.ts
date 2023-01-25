@@ -32,14 +32,14 @@ const botManager = new BotManager(serverBots);
 
 // Stream handling setup and processing kickoff.
 const redisClient = createClient({ url: Env.redisURL() });
-redisClient.on('error', (err) => { console.log(`Redis Error: ${err}`) });
+redisClient.on('error', (err) => { console.log('Redis Error', err) });
 await redisClient.connect();
 
 const webhookClient = new WebhookClient({ url: Env.discordWebhookURL() });
 const streamClient = await StreamClient.initialize(redisClient, 'bot');
 
 const stream = new Stream(botManager, streamClient, webhookClient);
-stream.process();
+void stream.process();
 
 // Rustpm chatbot setup and event handler registration.
 const client = new Client({
@@ -60,6 +60,11 @@ const cleanup = async () => {
   client.destroy();
   process.exit(2);
 };
-process.on('SIGTERM', cleanup);
-process.on('SIGINT', cleanup);
-process.on('SIGUSR2', cleanup);
+
+['SIGTERM', 'SIGINT', 'SIGUSR2'].forEach((signal) => {
+  process.on(signal, () => {
+    cleanup().catch((err) => {
+      console.log('Cleanup Error', err);
+    });
+  });
+});

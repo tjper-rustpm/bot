@@ -2,7 +2,7 @@ import type { APIMessage } from 'discord.js';
 import type { StreamMessage } from './client.js';
 import type { Activity, Status } from '../bots/bot.js';
 import type { v4 as uuidv4 } from 'uuid';
-import type { DateTime } from 'luxon';
+import { z } from 'zod';
 
 export interface Bot {
   setActivity(activity: Activity): void;
@@ -41,7 +41,7 @@ export class Stream {
     const second = 1000;
     const minute = 60 * second;
 
-    while (true) {
+    for (; ;) {
       const message = await this.streamClient.claimRead(minute)
 
       const event = this.parseEvent(message);
@@ -94,31 +94,38 @@ export class Stream {
     return;
   }
 
-  private parseEvent(message: StreamMessage): Event {
-    try {
-      const event = JSON.parse(message.message);
-      return event;
-    } catch (err) {
-      return null;
+  private parseEvent(message: StreamMessage): (Event | undefined) {
+    const res = eventValidator.safeParse(message.message);
+    if (!res.success) {
+      return;
     }
+    return res.data;
   }
 }
 
-type Event = ServerLiveEvent | ServerOfflineEvent | null;
+const serverEventValidator = z.object({
+  id: z.string().uuid(),
+  createdAt: z.string().datetime(),
+  serverId: z.string().uuid(),
+  serverName: z.string(),
+});
 
-interface EventHeader {
-  id: ReturnType<typeof uuidv4>;
-  createdAt: DateTime;
-}
+const serverLiveEventValidator = serverEventValidator.merge(
+  z.object({
+    kind: z.literal('server_live'),
+  }),
+);
 
-type ServerEvent = EventHeader & {
-  serverId: ReturnType<typeof uuidv4>;
-  serverName: string
-}
+const serverOfflineEventValidator = serverEventValidator.merge(
+  z.object({
+    kind: z.literal('server_offline'),
+  }),
+);
 
-type ServerLiveEvent = ServerEvent & {
-  kind: 'server_live';
-}
-type ServerOfflineEvent = ServerEvent & {
-  kind: 'server_offline';
-}
+type ServerLiveEvent = z.infer<typeof serverLiveEventValidator>
+type ServerOfflineEvent = z.infer<typeof serverOfflineEventValidator>
+
+const eventValidator = z.union([serverLiveEventValidator, serverOfflineEventValidator]);
+
+type Event = z.infer<typeof eventValidator>;
+

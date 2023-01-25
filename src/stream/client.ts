@@ -11,7 +11,7 @@ export class Client {
   protected redisClient: ReturnType<typeof createClient>;
   protected group: string;
   protected consumer: string = uuidv4();
-  protected claimStart: string = '0-0';
+  protected claimStart = '0-0';
 
   private constructor(redisClient: ReturnType<typeof createClient>, group: string) {
     this.redisClient = redisClient;
@@ -75,7 +75,7 @@ export class Client {
     const hour = 60 * minute;
 
     let resp: StreamsMessagesReply;
-    while (true) {
+    for (;;) {
       resp = await this.redisClient.xReadGroup(
         this.group,
         this.consumer,

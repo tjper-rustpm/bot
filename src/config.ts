@@ -1,6 +1,7 @@
 'use strict';
 
 import dotenv from 'dotenv';
+import { z } from 'zod';
 
 dotenv.config()
 
@@ -33,13 +34,16 @@ export class Env {
     * discordServerBots retrieves an array of server Discord bot configurations
     * used to connect to a set of Discord bots associated with Rustpm servers.
     */
-  static discordServerBots(): Array<ServerBotConfig> {
+  static discordServerBots(): ServerBotConfigs {
     const json = process.env['DISCORD_SERVER_BOTS']
     if (!json) throw new Error('DISCORD_SERVER_BOTS environment variable not found');
 
-    const serverBots = JSON.parse(json);
-    if (!serverBots.isArray()) throw new Error('DISCORD_SERVER_BOTS should be an Array')
+    const res = serverBotConfigsValidator.safeParse(json)
+    if (!res.success) {
+      throw new Error('DISCORD_SERVER_BOTS should be an Array')
+    }
 
+    const serverBots = res.data;
     return serverBots
   }
 
@@ -55,7 +59,12 @@ export class Env {
   }
 }
 
-export interface ServerBotConfig {
-  id: string;
-  token: string;
-}
+const serverBotConfigValidator = z.object({
+  id: z.string(),
+  token: z.string()
+});
+
+const serverBotConfigsValidator = serverBotConfigValidator.array().nonempty();
+
+export type ServerBotConfig = z.infer<typeof serverBotConfigValidator>;
+export type ServerBotConfigs = z.infer<typeof serverBotConfigsValidator>;

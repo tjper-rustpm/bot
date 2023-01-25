@@ -37,7 +37,7 @@ describe('Stream', () => {
       const item = streamClient.waiting.at(0);
       if (item != null) {
         streamClient.waiting = streamClient.waiting.slice(1);
-        const resolve = item as ResolveFunction;
+        const resolve = item;
         resolve(message);
         return;
       }
@@ -73,7 +73,9 @@ describe('Stream', () => {
   }
 
   const stream = new Stream(botManager, streamClient, webhookClient);
-  stream.process();
+  stream.process().catch((err) => {
+    expect(err).toBeNull();
+  });
 
   const tests = [
     {
@@ -119,4 +121,5 @@ describe('Stream', () => {
       streamClient.write(message)
     });
   });
+
 });
