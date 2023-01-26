@@ -16,7 +16,16 @@ jobs:
           cache-path: ~/project/node_modules
           override-ci-command: npm install
       - run: npm run lint
-
+  test:
+    docker:
+      - image: 'cimg/base:stable'
+      - image: 'circleci/redis:7.0-rc-alpine'
+    steps:
+      - checkout
+      - node/test:
+          version: '16.10'
+          pkg-manager: npm
+          test-results-for: jest        
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
@@ -24,13 +33,11 @@ workflows:
   lint-test:
     jobs:
       - lint
-      - node/test:
-          version: '16.10'
-          pkg-manager: npm
+      - test
       - aws-ecr/build-and-push-image:
           requires:
             - lint
-            - node/test
+            - test
           context: aws
           account-url: AWS_ECR_ACCOUNT_URL
           aws-access-key-id: AWS_ECR_ACCESS_KEY_ID
