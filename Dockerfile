@@ -6,7 +6,7 @@ RUN npm ci --omit=dev
 
 COPY tsconfig.json /usr/src/app/
 RUN npm install typescript
-RUN tsc
+RUN npx tsc
 
 FROM node:16.17.0-bullseye-slim
 
