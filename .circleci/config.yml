@@ -17,15 +17,16 @@ jobs:
           override-ci-command: npm install
       - run: npm run lint
   test:
+    executor: node/default
     docker:
       - image: 'cimg/base:stable'
       - image: 'circleci/redis:7.0-rc-alpine'
     steps:
       - checkout
-      - node/test:
-          version: '16.10'
-          pkg-manager: npm
-          test-results-for: jest        
+      - node/install-packages:
+          cache-path: ~/project/node_modules
+          override-ci-command: npm install
+      - run: npm run test
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
