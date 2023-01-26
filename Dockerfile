@@ -5,6 +5,7 @@ COPY package*.json /usr/src/app/
 RUN npm ci --omit=dev
 
 COPY tsconfig.json /usr/src/app/
+COPY src/ /usr/src/app/src/
 RUN npm install typescript
 RUN npx tsc
 
@@ -15,5 +16,5 @@ COPY --from=build /usr/bin/dumb-init /usr/bin/dumb-init
 USER node
 WORKDIR /usr/src/app
 COPY --chown=node:node --from=build /usr/src/app/node_modules /usr/src/app/node_modules
-COPY --chown=node:node ./dist /usr/src/app
-CMD ["dumb-init", "node", "index.js"]
+COPY --chown=node:node --from=build /usr/src/app/dist /usr/src/app/dist
+CMD ["dumb-init", "node", "dist/index.js"]
