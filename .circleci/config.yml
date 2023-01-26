@@ -17,9 +17,9 @@ jobs:
           override-ci-command: npm install
       - run: npm run lint
   test:
-    executor: node/default
     docker:
-      - image: 'circleci/redis:7.0-rc-alpine'
+      - image: cimg/node:19.3.0
+      - image: circleci/redis:7.0-rc-alpine
     steps:
       - checkout
       - node/install-packages:
