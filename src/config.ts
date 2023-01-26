@@ -14,8 +14,8 @@ export class Env {
     * Discord.
     */
   static discordToken(): string {
-    const token = process.env['DISCORD_TOKEN'];
-    if (!token) throw new Error('DISCORD_TOKEN environment variable not found');
+    const token = process.env['BOT_DISCORD_TOKEN'];
+    if (!token) throw new Error('BOT_DISCORD_TOKEN environment variable not found');
     return token;
   }
 
@@ -24,8 +24,8 @@ export class Env {
     * bot to a Discord webhook.
     */
   static discordWebhookURL(): string {
-    const url = process.env['DISCORD_WEBHOOK_URL'];
-    if (!url) throw new Error('DISCORD_WEBHOOK_URL environment variable not found');
+    const url = process.env['BOT_DISCORD_WEBHOOK_URL'];
+    if (!url) throw new Error('BOT_DISCORD_WEBHOOK_URL environment variable not found');
 
     return url;
   }
@@ -35,8 +35,8 @@ export class Env {
     * used to connect to a set of Discord bots associated with Rustpm servers.
     */
   static discordServerBots(): ServerBotConfigs {
-    const json = process.env['DISCORD_SERVER_BOTS']
-    if (!json) throw new Error('DISCORD_SERVER_BOTS environment variable not found');
+    const json = process.env['BOT_DISCORD_SERVER_BOTS']
+    if (!json) throw new Error('BOT_DISCORD_SERVER_BOTS environment variable not found');
 
     const res = serverBotConfigsValidator.safeParse(json)
     if (!res.success) {
@@ -52,8 +52,8 @@ export class Env {
     * Redis instance.
     */
   static redisURL(): string {
-    const url = process.env['REDIS_URL'];
-    if (!url) throw new Error('REDIS_URL environment variable not found');
+    const url = process.env['BOT_REDIS_URL'];
+    if (!url) throw new Error('BOT_REDIS_URL environment variable not found');
 
     return url;
   }
