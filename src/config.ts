@@ -38,7 +38,7 @@ export class Env {
     const json = process.env['BOT_DISCORD_SERVER_BOTS']
     if (!json) throw new Error('BOT_DISCORD_SERVER_BOTS environment variable not found');
 
-    const res = serverBotConfigsValidator.safeParse(json)
+    const res = serverBotConfigsSchema.safeParse(json)
     if (!res.success) {
       throw new Error('DISCORD_SERVER_BOTS should be an Array')
     }
@@ -57,14 +57,23 @@ export class Env {
 
     return url;
   }
+
+  /**
+    * healthPort retrieves the port used to expose the bot's health check.
+    */
+  static healthPort(): number {
+    const portSchema = z.number().min(1).max(65535);
+    const envVar = process.env['BOT_HEALTH_PORT'];
+    return portSchema.parse(envVar);
+  }
 }
 
-const serverBotConfigValidator = z.object({
+const serverBotConfigSchema = z.object({
   id: z.string(),
   token: z.string()
 });
 
-const serverBotConfigsValidator = serverBotConfigValidator.array().nonempty();
+const serverBotConfigsSchema = serverBotConfigSchema.array().nonempty();
 
-export type ServerBotConfig = z.infer<typeof serverBotConfigValidator>;
-export type ServerBotConfigs = z.infer<typeof serverBotConfigsValidator>;
+export type ServerBotConfig = z.infer<typeof serverBotConfigSchema>;
+export type ServerBotConfigs = z.infer<typeof serverBotConfigsSchema>;

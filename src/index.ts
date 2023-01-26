@@ -1,4 +1,7 @@
 import { Env, ServerBotConfig } from './config.js';
+
+import { Tcp } from './health/tcp.js';
+
 import { Client as StreamClient } from './stream/client.js';
 import { Stream } from './stream/stream.js';
 
@@ -54,8 +57,13 @@ client.on(Events.InteractionCreate, (...args) => interactionCreate(...args));
 
 await client.login(Env.discordToken());
 
+// Create TCP health check.
+const healthCheck = new Tcp();
+await healthCheck.listen(Env.healthPort());
+
 // Cleanup for entire application and associations with OS signals.
 const cleanup = async () => {
+  await healthCheck.shutdown();
   await redisClient.quit();
   client.destroy();
   process.exit(2);
@@ -68,3 +76,5 @@ const cleanup = async () => {
     });
   });
 });
+
+
