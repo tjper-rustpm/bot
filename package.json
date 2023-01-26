@@ -1,6 +1,6 @@
 {
   "name": "bot",
-  "type": "commonjs",
+  "type": "module",
   "version": "1.0.0",
   "description": "Rustpm discord bot monorepo.",
   "main": "src/index.ts",
