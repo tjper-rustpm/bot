@@ -43,7 +43,6 @@ workflows:
           aws-access-key-id: AWS_ECR_ACCESS_KEY_ID
           aws-secret-access-key: AWS_ECR_SECRET_ACCESS_KEY
           create-repo: false
-          dockerfile: deploy/Dockerfile.prod
           no-output-timeout: 20m
           path: .
           region: AWS_REGION
