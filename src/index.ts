@@ -27,7 +27,11 @@ const serverBots = await Promise.all(
         ]
       });
       await client.login(config.token);
-      return { serverId: config.id, bot: new Bot(client) }
+      return {
+        serverId: config.id,
+        bot: new Bot(client),
+        client: client,
+      }
     }),
 )
 
@@ -65,6 +69,10 @@ await healthCheck.listen(Env.healthPort());
 const cleanup = async () => {
   await healthCheck.shutdown();
   await redisClient.quit();
+
+  serverBots.map(({ client }: {client: Client}) => {
+    client.destroy();
+  });
   client.destroy();
   process.exit(2);
 };
