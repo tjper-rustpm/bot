@@ -59,7 +59,7 @@ export class Env {
     */
   static healthPort(): number {
     const portSchema = z.number().min(1).max(65535);
-    const envVar = process.env['BOT_HEALTH_PORT'];
+    const envVar = parseInt(process.env['BOT_HEALTH_PORT']);
     return portSchema.parse(envVar);
   }
 }
