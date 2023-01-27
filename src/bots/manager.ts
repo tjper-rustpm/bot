@@ -1,8 +1,7 @@
 import type { Bot } from './bot.js';
-import type { v4 as uuidv4 } from 'uuid';
 
 export class Manager {
-  protected serverBots: Map<ReturnType<typeof uuidv4>, Bot>;
+  protected serverBots: Map<string, Bot>;
 
   constructor(serverBots: Array<ServerBot>) {
     this.serverBots = serverBots.reduce<typeof this.serverBots>(
@@ -19,7 +18,7 @@ export class Manager {
     * @return bot - The Discord Bot client.
     * @return ok - Whether the bot was found while fetching.
     */
-  fetchBot(serverId: ReturnType<typeof uuidv4>): { bot?: Bot, ok: boolean } {
+  fetchBot(serverId: string): { bot?: Bot, ok: boolean } {
     const bot = this.serverBots.get(serverId)
     if (bot == null) {
       return { ok: false };
@@ -29,6 +28,6 @@ export class Manager {
 }
 
 export interface ServerBot {
-  serverId: ReturnType<typeof uuidv4>;
+  serverId: string;
   bot: Bot;
 }

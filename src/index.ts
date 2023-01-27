@@ -6,7 +6,6 @@ import { Client as StreamClient } from './stream/client.js';
 import { Stream } from './stream/stream.js';
 
 import { Manager as BotManager } from './bots/manager.js';
-import type { ServerBot } from './bots/manager.js';
 import { Bot } from './bots/bot.js';
 
 import { Client, Events, GatewayIntentBits, WebhookClient, } from 'discord.js';
@@ -17,9 +16,9 @@ import { interactionCreate } from './events/interactionCreate.js';
 
 // Server chatbots and bot manager setup.
 const serverBotConfigs = Env.discordServerBots();
-const serverBots = await Promise.all(
+const serverBotsAndClient = await Promise.all(
   serverBotConfigs.map(
-    async (config: ServerBotConfig): Promise<ServerBot> => {
+    async (config: ServerBotConfig) => {
       const client = new Client({
         intents: [
           GatewayIntentBits.Guilds,
@@ -31,9 +30,12 @@ const serverBots = await Promise.all(
         serverId: config.id,
         bot: new Bot(client),
         client: client,
-      }
+      };
     }),
 )
+const serverBots = serverBotsAndClient.map(({serverId, bot}) => {
+  return { serverId: serverId, bot: bot };
+});
 
 const botManager = new BotManager(serverBots);
 
@@ -70,7 +72,7 @@ const cleanup = async () => {
   await healthCheck.shutdown();
   await redisClient.quit();
 
-  serverBots.map(({ client }: {client: Client}) => {
+  serverBotsAndClient.map(({ client }: {client: Client}) => {
     client.destroy();
   });
   client.destroy();
