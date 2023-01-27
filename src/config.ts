@@ -35,15 +35,11 @@ export class Env {
     * used to connect to a set of Discord bots associated with Rustpm servers.
     */
   static discordServerBots(): ServerBotConfigs {
-    const json = process.env['BOT_DISCORD_SERVER_BOTS']
-    if (!json) throw new Error('BOT_DISCORD_SERVER_BOTS environment variable not found');
+    const envVar = process.env['BOT_DISCORD_SERVER_BOTS']
+    if (!envVar) throw new Error('BOT_DISCORD_SERVER_BOTS environment variable not found');
 
-    const res = serverBotConfigsSchema.safeParse(json)
-    if (!res.success) {
-      throw new Error('DISCORD_SERVER_BOTS should be an Array')
-    }
-
-    const serverBots = res.data;
+    const json = JSON.parse(envVar) as ServerBotConfigs;
+    const serverBots = serverBotConfigsSchema.parse(json)
     return serverBots
   }
 
