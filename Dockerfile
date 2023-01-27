@@ -15,6 +15,7 @@ ENV NODE_ENV production
 COPY --from=build /usr/bin/dumb-init /usr/bin/dumb-init
 USER node
 WORKDIR /usr/src/app
+COPY --chown=node:node --from=build /usr/src/app/package*.json /usr/src/app/
 COPY --chown=node:node --from=build /usr/src/app/node_modules /usr/src/app/node_modules
 COPY --chown=node:node --from=build /usr/src/app/dist /usr/src/app/dist
 CMD ["dumb-init", "node", "dist/index.js"]
