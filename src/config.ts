@@ -58,9 +58,12 @@ export class Env {
     * healthPort retrieves the port used to expose the bot's health check.
     */
   static healthPort(): number {
+    const envVar = process.env['BOT_HEALTH_PORT']
+    if (!envVar) throw new Error('BOT_REDIS_URL environment variable not found');
+
     const portSchema = z.number().min(1).max(65535);
-    const envVar = parseInt(process.env['BOT_HEALTH_PORT']);
-    return portSchema.parse(envVar);
+    const port = parseInt(envVar);
+    return portSchema.parse(port);
   }
 }
 
