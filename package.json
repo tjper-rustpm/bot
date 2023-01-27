@@ -1,13 +1,13 @@
 {
   "name": "bot",
-  "type": "commonjs",
+  "type": "module",
   "version": "1.0.0",
   "description": "Rustpm discord bot monorepo.",
   "main": "src/index.ts",
   "scripts": {
     "dev": "nodemon --exec ts-node-esm src/index.ts",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js src",
-    "lint": "eslint --color -c .eslintrc.js src"
+    "lint": "eslint --color -c .eslintrc.cjs src"
   },
   "author": "",
   "license": "ISC",
