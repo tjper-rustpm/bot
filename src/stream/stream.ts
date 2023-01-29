@@ -59,12 +59,15 @@ export class Stream {
   }
 
   private async handle(event: Event): Promise<void> {
-    switch (event?.kind) {
+    switch (event.kind) {
       case 'server_status_change':
         await this.handleServerStatusChange(event);
         break;
       default: 
-        log.info(`unrecognized event read from stream; kind: ${event.kind}`)
+        log.info(
+          'unrecognized event read from stream',
+          { kind: event.kind },
+        );
     }
     return
   }
