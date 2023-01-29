@@ -36,7 +36,7 @@ describe('Client', () => {
     const resp = await client.read();
 
     expect(resp.id).toBeTruthy();
-    expect(resp.message).toBe(message);
+    expect(resp.payload).toBe(message);
 
     await client.ack(resp);
   });
@@ -50,7 +50,7 @@ describe('Client', () => {
     const firstResp = await firstClient.read();
 
     expect(firstResp.id).toBeTruthy();
-    expect(firstResp.message).toBe(message);
+    expect(firstResp.payload).toBe(message);
 
     await new Promise((resolve) => setTimeout(resolve, 500));
 

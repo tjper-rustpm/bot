@@ -1,6 +1,6 @@
 import { createLogger, format, transports } from 'winston';
 
-export default logger = createLogger({
+export default createLogger({
   format: format.json(),
   defaultMeta: { service: 'bot' },
   transports: [

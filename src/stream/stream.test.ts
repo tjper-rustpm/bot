@@ -1,7 +1,7 @@
 import type { Bot } from './stream.js';
 import { Stream } from './stream.js';
 import type { StreamMessage } from './client.js';
-import type { Activity, Status } from '../bots/bot.js';
+import type { Status } from '../bots/bot.js';
 
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,9 +10,13 @@ import type { APIMessage } from 'discord.js';
 
 describe('Stream', () => {
   const bot = {
-    activity: '',
-    setActivity: (activity: Activity): void => {
-      bot.activity = activity;
+    active: 0,
+    setActivePlayers: (active: number): void => {
+      bot.active = active;
+    },
+    max: 0,
+    setMaxPlayers: (max: number): void => {
+      bot.max = max;
     },
     status: 'dnd',
     setStatus: (status: Status): void => {
@@ -79,44 +83,80 @@ describe('Stream', () => {
 
   const tests = [
     {
-      name: 'should handle ServerLiveEvent',
-      kind: 'server_live',
+      name: 'should handle server is live',
+      details: {
+        status: 'live',
+        mask: ['status'],
+      },
       expected: {
-        activity: 'Playing Rust',
+        active: 0,
+        max: 0,
         status: 'online',
-        sent: 'test-server is online',
+      }, 
+    },
+    {
+      name: 'should handle server is offline',
+      details: {
+        status: 'offline',
+        mask: ['status'],
+      },
+      expected: {
+        active: 0,
+        max: 0,
+        status: 'dnd',
       },
     },
     {
-      name: 'should handle ServerOfflineEvent',
-      kind: 'server_offline',
+      name: 'should handle active players change',
+      details: {
+        activePlayers: 100,
+        mask: ['activePlayers'],
+      },
       expected: {
-        activity: '',
+        active: 100,
+        max: 0,
         status: 'dnd',
-        sent: 'test-server is offline',
+      },
+    },
+    {
+      name: 'should handle max players change',
+      details: {
+        maxPlayers: 200,
+        mask: ['maxPlayers'],
+      },
+      expected: {
+        active: 100,
+        max: 200,
+        status: 'dnd',
+        sent: 'Server test-server status change being processed.',
       },
     },
   ];
 
   tests.forEach((kase): void => {
     test(kase.name, (done) => {
+      const serverId = uuidv4();
+
       streamClient.emitter.once('acked', () => {
-        expect(bot.activity).toStrictEqual(kase.expected.activity);
+        expect(bot.active).toStrictEqual(kase.expected.active);
+        expect(bot.max).toStrictEqual(kase.expected.max);
         expect(bot.status).toStrictEqual(kase.expected.status);
-        expect(webhookClient.sent).toStrictEqual(kase.expected.sent);
+
+        const expectedSent = `Server ${serverId} status change being processed.`;
+        expect(webhookClient.sent).toStrictEqual(expectedSent);
         done();
       });
 
       const event = {
         id: uuidv4(),
-        kind: kase.kind,
+        kind: 'server_status_change',
         createdAt: DateTime.utc(),
-        serverId: uuidv4(),
-        serverName: 'test-server',
+        serverId: serverId,
+        details: kase.details,
       };
       const message = {
         id: uuidv4(),
-        message: JSON.stringify(event),
+        payload: JSON.stringify(event),
       };
       streamClient.write(message)
     });

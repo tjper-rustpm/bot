@@ -144,7 +144,6 @@ export class Client {
     return await this.read();
   }
 
-
   /**
     * ack acknowledges the messaged passed. Any given message should only be 
     * acknowledged once.
@@ -171,7 +170,7 @@ export class Client {
 
     return {
       id: id as string,
-      message: payload as string,
+      payload: payload as string,
     }
   }
 }
@@ -179,7 +178,7 @@ export class Client {
 // StreamMessage is a message read from the event stream.
 export interface StreamMessage {
   id: string;
-  message: string;
+  payload: string;
 }
 
 // stream is the stream group utilized within the Rustpm system to communicate inter-service events.

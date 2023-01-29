@@ -1,12 +1,15 @@
 import type { APIMessage } from 'discord.js';
 import type { StreamMessage } from './client.js';
-import type { Activity, Status } from '../bots/bot.js';
+import type { Status } from '../bots/bot.js';
 import type { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
+import log from '../logger.js';
+
 export interface Bot {
-  setActivity(activity: Activity): void;
   setStatus(status: Status): void;
+  setActivePlayers(active: number): void;
+  setMaxPlayers(max: number): void;
 }
 
 export interface BotManager {
@@ -44,8 +47,8 @@ export class Stream {
     for (; ;) {
       const message = await this.streamClient.claimRead(minute)
 
-      const event = this.parseEvent(message);
-      if (event) {
+      const {event, success} = this.parseEvent(message);
+      if (success && event) {
         // If an event may be parsed from the message, proceed to handle it.
         // Otherwise, acknowledge the malformed message and proceed.
         await this.handle(event);
@@ -57,76 +60,73 @@ export class Stream {
 
   private async handle(event: Event): Promise<void> {
     switch (event?.kind) {
-      case 'server_live':
-        await this.handleServerLive(event);
-        break;
-      case 'server_offline':
-        await this.handleServerOffline(event);
+      case 'server_status_change':
+        await this.handleServerStatusChange(event);
         break;
     }
     return
   }
 
-  private async handleServerLive(event: ServerLiveEvent): Promise<void> {
-    await this.webhookClient.send(`${event.serverName} is online`)
+  private async handleServerStatusChange(event: ServerStatusChangeEvent): Promise<void> {
+    await this.webhookClient.send(`Server ${event.serverId} status change being processed.`);
 
     const { bot, ok } = this.botManager.fetchBot(event.serverId)
     if (!ok || bot == null) {
       return;
     }
+    
+    const details = event.details
+    const mask = details.mask;
 
-    bot.setActivity('Playing Rust');
-    bot.setStatus('online');
-
-    return;
-  }
-
-  private async handleServerOffline(event: ServerOfflineEvent): Promise<void> {
-    await this.webhookClient.send(`${event.serverName} is offline`)
-
-    const { bot, ok } = this.botManager.fetchBot(event.serverId)
-    if (!ok || bot == null) {
-      return;
+    if (mask.includes('status') && details.status === 'live') {
+      bot.setStatus('online');
+    }
+    if (mask.includes('status') && details.status === 'offline') {
+      bot.setStatus('dnd');
+    }
+    if (mask.includes('activePlayers') && details.activePlayers) {
+      bot.setActivePlayers(details.activePlayers);
+    }
+    if (mask.includes('maxPlayers') && details.maxPlayers) {
+      bot.setMaxPlayers(details.maxPlayers);
     }
 
-    bot.setActivity('');
-    bot.setStatus('dnd');
     return;
   }
 
-  private parseEvent(message: StreamMessage): (Event | undefined) {
-    // TODO: Can discriminate unions be used to return an Event or an Error?
-    const res = eventValidator.safeParse(JSON.parse(message.message));
+  private parseEvent(message: StreamMessage): {event?: Event, success: boolean} {
+    const json = JSON.parse(message.payload) as Event;
+    const res = eventSchema.safeParse(json);
     if (!res.success) {
-      return;
+      log.info(res.error);
+      return { success: false }
     }
-    return res.data;
+    return { event: res.data, success: res.success };
   }
 }
 
-const serverEventValidator = z.object({
+const serverEventSchema = z.object({
   id: z.string().uuid(),
   createdAt: z.string().datetime(),
   serverId: z.string().uuid(),
-  serverName: z.string(),
 });
 
-const serverLiveEventValidator = serverEventValidator.merge(
+const maskLiterals = ['status', 'activePlayers', 'maxPlayers'];
+const oneOfMaskLiterals = (mask: string[]) => mask.some((field) => maskLiterals.includes(field));
+const serverStatusChangeDetailsSchema = z.object({
+  status: z.union([z.literal('live'), z.literal('offline')]).optional(),
+  activePlayers: z.number().optional(),
+  maxPlayers: z.number().optional(),
+  mask: z.string().array().refine(oneOfMaskLiterals),
+});
+
+const serverStatusChangeEventSchema = serverEventSchema.merge(
   z.object({
-    kind: z.literal('server_live'),
+    kind: z.literal('server_status_change'),
+    details: serverStatusChangeDetailsSchema,
   }),
 );
+type ServerStatusChangeEvent = z.infer<typeof serverStatusChangeEventSchema>
 
-const serverOfflineEventValidator = serverEventValidator.merge(
-  z.object({
-    kind: z.literal('server_offline'),
-  }),
-);
-
-type ServerLiveEvent = z.infer<typeof serverLiveEventValidator>
-type ServerOfflineEvent = z.infer<typeof serverOfflineEventValidator>
-
-const eventValidator = z.union([serverLiveEventValidator, serverOfflineEventValidator]);
-
-type Event = z.infer<typeof eventValidator>;
-
+const eventSchema = serverStatusChangeEventSchema;
+type Event = z.infer<typeof serverStatusChangeEventSchema>;
