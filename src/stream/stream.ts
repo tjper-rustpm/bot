@@ -63,6 +63,8 @@ export class Stream {
       case 'server_status_change':
         await this.handleServerStatusChange(event);
         break;
+      default: 
+        log.info(`unrecognized event read from stream; kind: ${event.kind}`)
     }
     return
   }
