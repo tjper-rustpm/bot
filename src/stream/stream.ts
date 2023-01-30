@@ -61,7 +61,7 @@ export class Stream {
   private async handle(event: Event): Promise<void> {
     switch (event.kind) {
       case 'server_status_change':
-        await this.handleServerStatusChange(event);
+        await this.handleServerStatusChange(event as ServerStatusChangeEvent);
         break;
       default: 
         log.info(
@@ -73,6 +73,15 @@ export class Stream {
   }
 
   private async handleServerStatusChange(event: ServerStatusChangeEvent): Promise<void> {
+    const { success } = serverStatusChangeEventSchema.safeParse(event);
+    if (!success) {
+      log.error(
+        'while handling server status change; invalid event',
+        { event: event },
+      );
+      return;
+    }
+
     await this.webhookClient.send(`Server ${event.serverId} status change being processed.`);
 
     const { bot, ok } = this.botManager.fetchBot(event.serverId)
@@ -101,19 +110,19 @@ export class Stream {
 
   private parseEvent(message: StreamMessage): {event?: Event, success: boolean} {
     const json = JSON.parse(message.payload) as Event;
-    const res = eventSchema.safeParse(json);
+    const res = eventSchema.passthrough().safeParse(json);
     if (!res.success) {
-      log.info(res.error);
+      log.error('while parsing stream event', res.error);
       return { success: false }
     }
     return { event: res.data, success: res.success };
   }
 }
 
-const serverEventSchema = z.object({
+const eventSchema = z.object({
   id: z.string().uuid(),
+  kind: z.string(),
   createdAt: z.string().datetime(),
-  serverId: z.string().uuid(),
 });
 
 const maskLiterals = ['status', 'activePlayers', 'maxPlayers'];
@@ -125,13 +134,13 @@ const serverStatusChangeDetailsSchema = z.object({
   mask: z.string().array().refine(oneOfMaskLiterals),
 });
 
-const serverStatusChangeEventSchema = serverEventSchema.merge(
+const serverStatusChangeEventSchema = eventSchema.merge(
   z.object({
     kind: z.literal('server_status_change'),
+    serverId: z.string().uuid(),
     details: serverStatusChangeDetailsSchema,
   }),
 );
-type ServerStatusChangeEvent = z.infer<typeof serverStatusChangeEventSchema>
 
-const eventSchema = serverStatusChangeEventSchema;
-type Event = z.infer<typeof serverStatusChangeEventSchema>;
+type ServerStatusChangeEvent = z.infer<typeof serverStatusChangeEventSchema>
+type Event = z.infer<typeof eventSchema>;
