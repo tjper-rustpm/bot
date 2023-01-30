@@ -54,6 +54,10 @@ export class Stream {
         await this.handle(event);
       }
 
+      log.info(
+        'acknowledging event',
+        { id: message.id },
+      );
       await this.streamClient.ack(message);
     }
   }

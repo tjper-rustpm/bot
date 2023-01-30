@@ -141,15 +141,16 @@ export class Client {
       return claimed;
     }
 
-    return await this.read();
+    return this.read();
   }
 
   /**
     * ack acknowledges the messaged passed. Any given message should only be 
     * acknowledged once.
     */
-  async ack(message: StreamMessage) {
+  async ack(message: StreamMessage): Promise<void> {
     await this.redisClient.xAck(stream, this.group, message.id)
+    return;
   }
 
   private extractMessage(streamMessages: StreamMessagesReply): StreamMessage {
