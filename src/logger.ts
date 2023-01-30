@@ -5,5 +5,5 @@ export default createLogger({
   defaultMeta: { service: 'bot' },
   transports: [
     new transports.Console(),
-  ],
+ ],
 });

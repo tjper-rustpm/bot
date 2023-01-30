@@ -1,19 +1,24 @@
+import type { Logger } from 'winston';
 import type { createClient } from 'redis';
 import { ErrorReply } from 'redis';
 import { v4 as uuidv4 } from 'uuid';
 
+import logger from '../logger.js';
+
 /**
   * Client provides an API for interacting with the stream. The current
-  * implemenation utilizes Redis Streams. 
+  * implementation utilizes Redis Streams. 
   * https://redis.io/docs/data-types/streams/
   */
 export class Client {
+  private logger: Logger;
   protected redisClient: ReturnType<typeof createClient>;
   protected group: string;
   protected consumer: string = uuidv4();
   protected claimStart = '0-0';
 
   private constructor(redisClient: ReturnType<typeof createClient>, group: string) {
+    this.logger = logger.child({ 'module': 'stream', 'class': 'Client' });
     this.redisClient = redisClient;
     this.group = group;
   }
@@ -44,6 +49,7 @@ export class Client {
       }
       throw err;
     }
+
     return new Client(redisClient, group);
   }
 
@@ -75,7 +81,7 @@ export class Client {
     const hour = 60 * minute;
 
     let resp: StreamsMessagesReply;
-    for (;;) {
+    for (; ;) {
       resp = await this.redisClient.xReadGroup(
         this.group,
         this.consumer,
@@ -100,7 +106,9 @@ export class Client {
       throw new Error('Stream read group did not return a stream message');
     }
 
-    return this.extractMessage(messages);
+    const message = this.extractMessage(messages);
+    this.logger.debug('read stream message', { id: message.id });
+    return message;
   }
 
   /**
@@ -128,7 +136,10 @@ export class Client {
     }
 
     this.claimStart = resp.nextId;
-    return this.extractMessage(resp.messages);
+    const message = this.extractMessage(resp.messages);
+    this.logger.debug('claimed stream message', { id: message.id });
+
+    return message;
   }
 
   /**
@@ -149,6 +160,7 @@ export class Client {
     * acknowledged once.
     */
   async ack(message: StreamMessage): Promise<void> {
+    this.logger.debug('acknowledging stream message', { id: message.id });
     await this.redisClient.xAck(stream, this.group, message.id)
     return;
   }
