@@ -73,11 +73,11 @@ export class Stream {
   }
 
   private async handleServerStatusChange(event: ServerStatusChangeEvent): Promise<void> {
-    const { success } = serverStatusChangeEventSchema.safeParse(event);
-    if (!success) {
+    const res = serverStatusChangeEventSchema.safeParse(event);
+    if (!res.success) {
       log.error(
         'while handling server status change; invalid event',
-        { event: event },
+        { issues: res.error.issues, event: event },
       );
       return;
     }
