@@ -109,10 +109,13 @@ export class Stream {
   }
 
   private parseEvent(message: StreamMessage): {event?: Event, success: boolean} {
-    const json = JSON.parse(message.payload) as Event;
-    const res = eventSchema.passthrough().safeParse(json);
+    const event = JSON.parse(message.payload) as Event;
+    const res = eventSchema.passthrough().safeParse(event);
     if (!res.success) {
-      log.error('while parsing stream event', res.error);
+      log.error(
+        'while parsing stream event',
+          { issues: res.error.issues, event: event },
+      );
       return { success: false }
     }
     return { event: res.data, success: res.success };
